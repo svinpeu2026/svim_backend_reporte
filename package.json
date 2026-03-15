@@ -1,7 +1,6 @@
 {
-  "name": "svim-backend",
+  "name": "svim-backend-reporte",
   "version": "1.0.0",
-  "description": "Backend SVIM",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"

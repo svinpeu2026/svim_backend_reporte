@@ -9,13 +9,18 @@ app.use(express.json());
 
 /*
 ==============================
-CONEXION BASE SVIM (NEON)
+CONEXION BASE DE DATOS
 ==============================
 */
 
-const sqlSVIM = neon(
-"postgresql://neondb_owner:npg_Dhx3Cw6YvjqH@ep-rough-bread-a4fglhyd-pooler.us-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require"
-);
+const DATABASE_URL = process.env.DATABASE_URL;
+
+if (!DATABASE_URL) {
+  console.error("❌ DATABASE_URL no está definida");
+  process.exit(1);
+}
+
+const sql = neon(DATABASE_URL);
 
 /*
 ==============================
@@ -24,7 +29,10 @@ RUTA PRINCIPAL
 */
 
 app.get("/", (req, res) => {
-  res.send("🚀 API SVIM funcionando correctamente");
+  res.json({
+    ok: true,
+    mensaje: "🚀 API SVIM funcionando correctamente"
+  });
 });
 
 /*
@@ -34,22 +42,19 @@ CONSULTAR IMEI
 */
 
 app.get("/api/imei/:imei", async (req, res) => {
-
   try {
 
     const { imei } = req.params;
 
-    const result = await sqlSVIM`
-
+    const result = await sql`
       SELECT *
       FROM SVIM_reporte
       WHERE IMEI_1 = ${imei}
-
     `;
 
     res.json({
       ok: true,
-      imei: imei,
+      imei,
       registros: result
     });
 
@@ -58,12 +63,11 @@ app.get("/api/imei/:imei", async (req, res) => {
     console.error("ERROR CONSULTA:", error);
 
     res.status(500).json({
-      ok:false,
-      error:error.message
+      ok: false,
+      error: error.message
     });
 
   }
-
 });
 
 /*
@@ -73,20 +77,17 @@ LISTAR REPORTES
 */
 
 app.get("/api/reportes", async (req, res) => {
-
   try {
 
-    const result = await sqlSVIM`
-
+    const result = await sql`
       SELECT *
       FROM SVIM_reporte
       ORDER BY ID DESC
       LIMIT 50
-
     `;
 
     res.json({
-      ok:true,
+      ok: true,
       data: result
     });
 
@@ -95,12 +96,11 @@ app.get("/api/reportes", async (req, res) => {
     console.error("ERROR LISTAR:", error);
 
     res.status(500).json({
-      ok:false,
-      error:error.message
+      ok: false,
+      error: error.message
     });
 
   }
-
 });
 
 /*
@@ -110,21 +110,18 @@ REGISTRO RANDOM
 */
 
 app.get("/api/random", async (req, res) => {
-
   try {
 
-    const result = await sqlSVIM`
-
+    const result = await sql`
       SELECT *
       FROM SVIM_reporte
       ORDER BY random()
       LIMIT 1
-
     `;
 
     res.json({
-      ok:true,
-      data: result[0]
+      ok: true,
+      data: result[0] || null
     });
 
   } catch (error) {
@@ -132,12 +129,11 @@ app.get("/api/random", async (req, res) => {
     console.error("ERROR RANDOM:", error);
 
     res.status(500).json({
-      ok:false,
-      error:error.message
+      ok: false,
+      error: error.message
     });
 
   }
-
 });
 
 /*
@@ -163,7 +159,7 @@ app.post("/api/reportar", async (req, res) => {
       serial
     } = req.body;
 
-    await sqlSVIM`
+    await sql`
 
       INSERT INTO SVIM_reporte
       (
@@ -198,8 +194,8 @@ app.post("/api/reportar", async (req, res) => {
     `;
 
     res.json({
-      ok:true,
-      mensaje:"Reporte SVIM creado correctamente"
+      ok: true,
+      mensaje: "Reporte SVIM creado correctamente"
     });
 
   } catch (error) {
@@ -207,8 +203,8 @@ app.post("/api/reportar", async (req, res) => {
     console.error("ERROR INSERT:", error);
 
     res.status(500).json({
-      ok:false,
-      error:error.message
+      ok: false,
+      error: error.message
     });
 
   }
@@ -224,10 +220,8 @@ SERVER
 const PORT = process.env.PORT || 8080;
 
 app.listen(PORT, () => {
-
   console.log("=================================");
   console.log("🚀 SERVIDOR SVIM INICIADO");
-  console.log(`http://localhost:${PORT}`);
+  console.log(`PUERTO: ${PORT}`);
   console.log("=================================");
-
 });
